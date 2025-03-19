@@ -29,7 +29,7 @@ def handler(pkt: DataPacket) -> None:
         print(f'Time: {elapsed_time:.2f}s | PPG: {cur_value}')
 
     except KeyError:
-        print("Warning: PPG data not found in packet")
+        print("Warning: PPG data not found in packet.")
 
 if __name__ == '__main__':
     serial_conn = None
