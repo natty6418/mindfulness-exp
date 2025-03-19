@@ -5,7 +5,7 @@ import sys
 participant_id = sys.argv[1] if len(sys.argv) > 1 else "unknown"
 
 # Define video filename with participant ID
-video_filename = f"participant_{participant_id}_video.avi"
+video_filename = f"./data/participant_{participant_id}_video.avi"
 
 # Open the webcam (0 = default camera)
 cap = cv2.VideoCapture(0)

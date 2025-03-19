@@ -29,7 +29,7 @@ import socket
 import sys
 
 participant_id = sys.argv[1] if len(sys.argv) > 1 else "unknown"
-LOG_FILE = f"participant_{participant_id}_trigger_log.txt"
+LOG_FILE = f"./data/participant_{participant_id}_trigger_log.txt"
 
 HOST = ''         # Empty string means to listen on all available interfaces
 PORT = 65432      # Choose an appropriate port that is open on your firewall

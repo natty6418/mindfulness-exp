@@ -8,7 +8,7 @@ from pyshimmer import ShimmerBluetooth, DEFAULT_BAUDRATE, DataPacket, EChannelTy
 participant_id = sys.argv[1] if len(sys.argv) > 1 else "unknown"
 
 # Define output filename
-DATA_FILE = f"participant_{participant_id}_ppg_data.txt"
+DATA_FILE = f"./data/participant_{participant_id}_ppg_data.txt"
 
 timestamps = []
 ppg_values = []
