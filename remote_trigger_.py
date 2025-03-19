@@ -26,6 +26,10 @@ from haptics_pattern_player import load_and_play_tact_file
 # Play a .tact file pattern
 
 import socket
+import sys
+
+participant_id = sys.argv[1] if len(sys.argv) > 1 else "unknown"
+LOG_FILE = f"participant_{participant_id}_trigger_log.txt"
 
 HOST = ''         # Empty string means to listen on all available interfaces
 PORT = 65432      # Choose an appropriate port that is open on your firewall
@@ -69,6 +73,12 @@ if __name__ == "__main__":
                     data = conn.recv(1024)  # Adjust buffer size as needed
                     if not data:
                         break  # Connection closed by the client
+                        
+                    trigger_event = data.decode()
+                    print(f"Received trigger: {trigger_event}")
+
+                    with open(LOG_FILE, "a") as log:
+                        log.write(f"{time.time()},{trigger_event}\n")
                     # Here you can add the code to send the signal to your haptic jacket via Bluetooth
                     # print("Received trigger:", data.decode())
                     if data.decode() == "inhale":
