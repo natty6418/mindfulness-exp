@@ -11,8 +11,8 @@ ISI = 1500  # Inter-stimulus interval in ms
 STIM_DURATION = 1000  # Stimulus duration in ms
 MATCH_PROBABILITY = 0.3  # 30% match trials
 
-WORDS = ["RED", "GREEN", "BLUE", "YELLOW", "PINK", "ORANGE"]
-COLORS = {"RED": "red", "GREEN": "green", "BLUE": "blue", "YELLOW": "yellow", "PINK":"pink", "ORANGE": "orange"}
+WORDS = ["RED", "GREEN", "BLUE", "YELLOW", "PURPLE", "ORANGE"]
+COLORS = {"RED": "red", "GREEN": "green", "BLUE": "blue", "YELLOW": "yellow", "PURPLE":"purple", "ORANGE": "orange"}
 
 RESPONSE_KEY = "Return"  # Enter
 QUIT_KEY = "q"
@@ -151,7 +151,7 @@ def end_task():
             writer = csv.DictWriter(f, fieldnames=["word", "color", "match", "response", "correct", "reaction_time"])
             writer.writeheader()
             writer.writerows(results)
-        print(f"✅ Stroop task completed. Data saved to {log_file}")
+        print(f"Stroop task completed. Data saved to {log_file}")
     else:
         print("⚠️ No responses recorded. Task was likely quit early.")
 

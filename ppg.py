@@ -1,57 +1,54 @@
 import time
 import serial
 import sys
-import numpy as np
 from pyshimmer import ShimmerBluetooth, DEFAULT_BAUDRATE, DataPacket, EChannelType
 
-# Get participant ID from command-line argument
 participant_id = sys.argv[1] if len(sys.argv) > 1 else "unknown"
+DATA_FILE = f"./data/participant_{participant_id}_ppg_data.csv"
 
-# Define output filename
-DATA_FILE = f"./data/participant_{participant_id}_ppg_data.txt"
-
-timestamps = []
-ppg_values = []
-start_time = None
-
-def handler(pkt: DataPacket) -> None:
-    global start_time
+def handler(pkt: DataPacket, file_handle, start_time_holder) -> None:
     try:
         cur_value = pkt[EChannelType.INTERNAL_ADC_13]
-
-        if start_time is None:
-            start_time = time.time()
-
-        elapsed_time = time.time() - start_time
-        timestamps.append(elapsed_time)
-        ppg_values.append(cur_value)
-
-        print(f'Time: {elapsed_time:.2f}s | PPG: {cur_value}')
-
     except KeyError:
         print("Warning: PPG data not found in packet.")
+        return
+
+    if start_time_holder["start_time"] is None:
+        start_time_holder["start_time"] = time.time()
+
+    elapsed_time = time.time() - start_time_holder["start_time"]
+    print(f"Time: {elapsed_time:.2f}s | PPG: {cur_value}")
+
+    # Write data to disk immediately
+    file_handle.write(f"{elapsed_time:.4f},{cur_value}\n")
+    file_handle.flush()  # ensures data is actually written
 
 if __name__ == '__main__':
-    serial_conn = None
-    try:
-        serial_conn = serial.Serial('COM8', DEFAULT_BAUDRATE, timeout=1)
-        shim_dev = ShimmerBluetooth(serial_conn)
-        shim_dev.initialize()
+    # Open the file in write mode (or "a" if you want to append)
+    with open(DATA_FILE, "w", buffering=1) as f:
+        f.write("Time(s),PPG(mV)\n")  # header line
 
-        print(f"Starting PPG data collection for Participant {participant_id}...")
-        shim_dev.add_stream_callback(handler)
-        shim_dev.start_streaming()
+        try:
+            serial_conn = serial.Serial('COM8', DEFAULT_BAUDRATE, timeout=1)
+            shim_dev = ShimmerBluetooth(serial_conn)
+            shim_dev.initialize()
 
-        while True:
-            time.sleep(1)
+            print(f"Starting PPG data collection for Participant {participant_id}...")
+            
+            # We'll store the start time in a mutable dict so the handler can update it
+            start_time_holder = {"start_time": None}
+            
+            # Add a lambda or partial so we can pass 'f' and 'start_time_holder' to the handler
+            shim_dev.add_stream_callback(
+                lambda pkt: handler(pkt, f, start_time_holder)
+            )
+            shim_dev.start_streaming()
 
-    except KeyboardInterrupt:
-        print("\nStopping PPG data collection...")
-    finally:
-        if timestamps and ppg_values:
-            with open(DATA_FILE, "w") as file:
-                file.write("Time(s),PPG(mV)\n")
-                for t, p in zip(timestamps, ppg_values):
-                    file.write(f"{t:.4f},{p}\n")
+            # main loop
+            while True:
+                time.sleep(1)
 
-            print(f"✅ PPG data saved to {DATA_FILE}.")
+        except KeyboardInterrupt:
+            print("\nStopping PPG data collection...")
+        finally:
+            print(f"\n✅ Data continuously saved to {DATA_FILE}.")

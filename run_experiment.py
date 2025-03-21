@@ -2,6 +2,8 @@ import subprocess
 import time
 import os
 from datetime import datetime
+import signal
+
 
 # Prompt for participant ID
 participant_id = input("Enter Participant ID: ")
@@ -26,27 +28,28 @@ logs = {
 
 print(f"\n🧪 Starting experiment for Participant {participant_id}...\n")
 
-# --- STEP 1: Run Stroop Task ---
-print("▶ Running Stroop Task...")
-stroop_proc = subprocess.run(
-    ["python", "stroop.py", participant_id],
-    stdout=open(logs["stroop_out"], "w"),
-    stderr=open(logs["stroop_err"], "w")
-)
-print("✅ Stroop Task Completed.\n")
+# # --- STEP 1: Run Stroop Task ---
+# print("▶ Running Stroop Task...")
+# stroop_proc = subprocess.run(
+#     ["python", "stroop.py", participant_id],
+#     stdout=open(logs["stroop_out"], "w"),
+#     stderr=open(logs["stroop_err"], "w")
+# )
+# print("✅ Stroop Task Completed.\n")
 
-# --- STEP 2: Break Time ---
-break_seconds = 60  # 5 minutes
-print(f"🛋️ Break time: {break_seconds // 60} minute. Please relax...\n")
-time.sleep(break_seconds)
-print("⏰ Break over. Proceeding to main experiment...\n")
+# # --- STEP 2: Break Time ---
+# break_seconds = 15  # 5 minutes
+# print(f"🛋️ Break time: {break_seconds // 60} minute. Please relax...\n")
+# time.sleep(break_seconds)
+# print("⏰ Break over. Proceeding to main experiment...\n")
 
 # --- STEP 3: Start Main Experiment Processes (video, ppg, trigger) ---
 def start_process(script_name, log_out, log_err):
     return subprocess.Popen(
         ["python", script_name, participant_id],
         stdout=open(log_out, "w"),
-        stderr=open(log_err, "w")
+        stderr=open(log_err, "w"),
+        creationflags=subprocess.CREATE_NEW_PROCESS_GROUP
     )
 
 print("▶ Starting video, PPG, and trigger recording...\n")
@@ -59,10 +62,18 @@ trigger_proc = start_process("remote_trigger_.py", logs["trigger_out"], logs["tr
 input("🧑‍🔬 Press ENTER to stop the experiment...\n")
 
 # --- STEP 5: Terminate processes ---
-for proc, name in [(video_proc, "Video"), (ppg_proc, "PPG"), (trigger_proc, "Trigger")]:
+for proc, name in [(video_proc, "Video"), (trigger_proc, "Trigger")]:
     if proc.poll() is None:  # Process still running
         proc.terminate()
         print(f"🛑 {name} process terminated.")
+
+
+if ppg_proc.poll() is None:
+    ppg_proc.send_signal(signal.CTRL_BREAK_EVENT)
+    ppg_proc.wait()
+    print("🛑 PPG process terminated gracefully.")
+
+
 
 # --- Final log summary ---
 print("\n📁 Experiment completed. Data and logs saved:")
