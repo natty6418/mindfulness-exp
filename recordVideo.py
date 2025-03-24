@@ -8,7 +8,7 @@ participant_id = sys.argv[1] if len(sys.argv) > 1 else "unknown"
 video_filename = f"./data/participant_{participant_id}_video.avi"
 
 # Open the webcam (0 = default camera)
-cap = cv2.VideoCapture(1)
+cap = cv2.VideoCapture(2) #1
 
 # Define video codec and create a VideoWriter object
 fourcc = cv2.VideoWriter_fourcc(*'XVID')
@@ -20,7 +20,7 @@ while cap.isOpened():
     ret, frame = cap.read()
     if not ret:
         break
-
+    frame = cv2.convertScaleAbs(frame, alpha=2, beta=50) # Increase brightness
     out.write(frame)
     cv2.imshow('Recording', frame)
 

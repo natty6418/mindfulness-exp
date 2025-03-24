@@ -28,20 +28,20 @@ logs = {
 
 print(f"\n🧪 Starting experiment for Participant {participant_id}...\n")
 
-# # --- STEP 1: Run Stroop Task ---
-# print("▶ Running Stroop Task...")
-# stroop_proc = subprocess.run(
-#     ["python", "stroop.py", participant_id],
-#     stdout=open(logs["stroop_out"], "w"),
-#     stderr=open(logs["stroop_err"], "w")
-# )
-# print("✅ Stroop Task Completed.\n")
+# --- STEP 1: Run Stroop Task ---
+print("▶ Running Stroop Task...")
+stroop_proc = subprocess.run(
+    ["python", "stroop.py", participant_id],
+    stdout=open(logs["stroop_out"], "w"),
+    stderr=open(logs["stroop_err"], "w")
+)
+print("✅ Stroop Task Completed.\n")
 
-# # --- STEP 2: Break Time ---
-# break_seconds = 15  # 5 minutes
-# print(f"🛋️ Break time: {break_seconds // 60} minute. Please relax...\n")
-# time.sleep(break_seconds)
-# print("⏰ Break over. Proceeding to main experiment...\n")
+# --- STEP 2: Break Time ---
+break_seconds = 15  # 5 minutes
+print(f"🛋️ Break time: {break_seconds} seconds. Please relax...\n")
+time.sleep(break_seconds)
+print("⏰ Break over. Proceeding to main experiment...\n")
 
 # --- STEP 3: Start Main Experiment Processes (video, ppg, trigger) ---
 def start_process(script_name, log_out, log_err):

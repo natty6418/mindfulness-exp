@@ -3,7 +3,7 @@ import serial
 import sys
 from pyshimmer import ShimmerBluetooth, DEFAULT_BAUDRATE, DataPacket, EChannelType
 
-participant_id = sys.argv[1] if len(sys.argv) > 1 else "unknown"
+participant_id = sys.argv[1] if len(sys.argv) > 1 else "test"
 DATA_FILE = f"./data/participant_{participant_id}_ppg_data.csv"
 
 def handler(pkt: DataPacket, file_handle, start_time_holder) -> None:

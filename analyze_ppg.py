@@ -9,8 +9,8 @@ LOWCUT = 0.5  # Hz (Low cutoff for band-pass filter)
 HIGHCUT = 3.0  # Hz (High cutoff for band-pass filter)
 
 # 🔹 Simulated Raw PPG Data (Replace with actual Shimmer PPG readings)
-ppg_signal = np.loadtxt("./data/participant_test_ppg_data.csv", delimiter=",", skiprows=1, usecols=1)
-time = np.loadtxt("./data/participant_test_ppg_data.txt", delimiter=",", skiprows=1, usecols=0)
+ppg_signal = np.loadtxt("./data/participant_0_ppg_data.csv", delimiter=",", skiprows=1, usecols=1)
+time = np.loadtxt("./data/participant_0_ppg_data.csv", delimiter=",", skiprows=1, usecols=0)
     
 
 # 🔹 1. Apply Band-Pass Filter
