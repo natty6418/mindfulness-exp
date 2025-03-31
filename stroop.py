@@ -19,14 +19,17 @@ QUIT_KEY = "q"
 
 # === Setup participant ===
 participant_id = sys.argv[1] if len(sys.argv) > 1 else "test"
+experiment_id = sys.argv[2] if len(sys.argv) > 2 else "test"
 os.makedirs("data", exist_ok=True)
-log_file = f"./data/participant_{participant_id}_stroop_results.csv"
+log_file = f"./data/{experiment_id}/participant_{participant_id}_stroop_results.csv"
 results = []
 
 # === Tkinter GUI ===
 root = tk.Tk()
 root.title("Stroop Go/No-Go Task")
 root.geometry("650x300")
+root.attributes("-fullscreen", True)  # ✅ Fullscreen
+
 
 label = tk.Label(root, text="", font=("Arial", 42))
 label.pack(expand=True)
@@ -138,7 +141,13 @@ def start_task():
     instructions.pack_forget()
     start_time = time.time()
     task_running = True
+
+    # 🔧 Apply dark mode and bold text
+    root.configure(bg="black")
+    label.configure(bg="black", font=("Arial", 42, "bold"))
+    
     show_next_trial()
+
 
 def end_task():
     global task_running
