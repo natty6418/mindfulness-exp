@@ -73,7 +73,12 @@ if __name__ == "__main__":
             time.sleep(8)
             log_event("Audio: exhale2")
             play_audio("exhale3.wav")
-            time.sleep(13)
+            if i != 3:
+                time.sleep(8)
+                play_audio("repeat.wav")
+                time.sleep(5)
+            else:
+                time.sleep(8)
 
         log_event("Audio: bodyScan")
         play_audio_blocking("bodyScan2.wav")

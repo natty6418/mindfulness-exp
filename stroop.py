@@ -20,8 +20,9 @@ QUIT_KEY = "q"
 # === Setup participant ===
 participant_id = sys.argv[1] if len(sys.argv) > 1 else "test"
 experiment_id = sys.argv[2] if len(sys.argv) > 2 else "test"
+before_after = sys.argv[3]
 os.makedirs("data", exist_ok=True)
-log_file = f"./data/{experiment_id}/participant_{participant_id}_stroop_results.csv"
+log_file = f"./data/{experiment_id}/participant_{participant_id}_stroop_results_{before_after}.csv"
 results = []
 
 # === Tkinter GUI ===
