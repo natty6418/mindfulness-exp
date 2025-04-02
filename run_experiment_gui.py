@@ -1,157 +1,216 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 import subprocess
-import socket
-import os
 import threading
 import time
+import socket
+import os
 from datetime import datetime
-import signal
+
+# ---- CONFIG ----
+BREAK_DURATION = 15  # seconds
+MEDITATION_DURATION = 330  # seconds
+VIDEO_STOP_PORT = 30001
+PARTICIPANTS_FILE = "participants.txt"
+
+PRIMARY_COLOR = "#e0f7fa"  # light cyan
+ACCENT_COLOR = "#0288d1"   # blue
+FONT = ("Segoe UI", 14)
+TITLE_FONT = ("Segoe UI", 22, "bold")
 
 class ExperimentApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("Experiment Controller")
+        self.root.title("Mindfulness Experiment")
+        self.root.state('zoomed')  # Maximized
+        self.root.configure(bg=PRIMARY_COLOR)
+        self.user_continue = threading.Event()
         self.participant_id = tk.StringVar()
         self.experiment_id = tk.StringVar()
-        self.log_text = tk.StringVar()
         self.processes = {}
+        self.logs = {}
+        self.experiment = "test"
 
-        # UI Layout
-        tk.Label(root, text="Participant ID:").grid(row=0, column=0, sticky="w")
-        tk.Entry(root, textvariable=self.participant_id).grid(row=0, column=1)
+        self.build_start_screen()
 
-        tk.Label(root, text="Experiment:").grid(row=1, column=0, sticky="w")
-        ttk.Combobox(root, textvariable=self.experiment_id, values=["1", "2", "3"]).grid(row=1, column=1)
+    def show_continue_button(self):
+        def on_click():
+            self.user_continue.set()
+            self.continue_button.destroy()  # Remove button after click
 
-        tk.Button(root, text="Start Experiment", command=self.start_experiment).grid(row=2, column=0, pady=10)
-        tk.Button(root, text="Finish Experiment", command=self.stop_experiment).grid(row=2, column=1, pady=10)
+        self.continue_button = tk.Button(
+            self.root, text="Proceed to Next Step", command=on_click,
+            bg=ACCENT_COLOR, fg="white", font=FONT, padx=20, pady=10, relief="flat", borderwidth=0
+        )
+        self.continue_button.pack(pady=30)
 
-        self.log_area = tk.Text(root, height=15, width=50)
-        self.log_area.grid(row=3, column=0, columnspan=2)
 
-    def log(self, message):
-        timestamp = datetime.now().strftime("%H:%M:%S")
-        self.log_area.insert(tk.END, f"[{timestamp}] {message}\n")
-        self.log_area.see(tk.END)
+    def build_start_screen(self):
+        for widget in self.root.winfo_children():
+            widget.destroy()
 
-    def start_experiment(self):
+        frame = tk.Frame(self.root, bg=PRIMARY_COLOR)
+        frame.place(relx=0.5, rely=0.5, anchor="center")
+
+        tk.Label(frame, text="Mindfulness Experiment", font=TITLE_FONT, bg=PRIMARY_COLOR).grid(row=0, column=0, columnspan=2, pady=20)
+
+        tk.Label(frame, text="Participant ID:", font=FONT, bg=PRIMARY_COLOR).grid(row=1, column=0, sticky="e", padx=10, pady=10)
+        tk.Entry(frame, textvariable=self.participant_id, font=FONT).grid(row=1, column=1, padx=10, pady=10)
+
+        tk.Label(frame, text="Experiment Type:", font=FONT, bg=PRIMARY_COLOR).grid(row=2, column=0, sticky="e", padx=10, pady=10)
+        ttk.Combobox(frame, textvariable=self.experiment_id, values=["1", "2", "3"], font=FONT, state="readonly").grid(row=2, column=1, padx=10, pady=10)
+
+        tk.Button(frame, text="Start", command=self.validate_inputs,
+                  bg=ACCENT_COLOR, fg="white", font=FONT, padx=20, pady=10, relief="flat", borderwidth=0).grid(row=3, column=0, columnspan=2, pady=20)
+
+    def validate_inputs(self):
         pid = self.participant_id.get()
         exp_id = self.experiment_id.get()
+
         if not pid or not exp_id:
-            messagebox.showerror("Error", "Enter Participant ID and Experiment")
+            messagebox.showerror("Error", "Please fill all fields.")
             return
 
-        # Save participant ID
-        filename = "participants.txt"
-        if os.path.exists(filename):
-            with open(filename, "r") as f:
-                participant_ids = set(f.read().splitlines())
+        if os.path.exists(PARTICIPANTS_FILE):
+            with open(PARTICIPANTS_FILE, "r") as f:
+                existing = set(f.read().splitlines())
         else:
-            participant_ids = set()
+            existing = set()
+        if pid != "0":
+            if pid in existing:
+                messagebox.showerror("Error", "Participant ID already exists!")
+                return
 
-        if pid in participant_ids and pid !="0":
-            messagebox.showerror("Error", "Participant ID already exists!")
-            return
+            with open(PARTICIPANTS_FILE, "a") as f:
+                f.write(pid + "\n")
 
-        participant_ids.add(pid)
-        with open(filename, "a") as f:
-            f.write(pid + "\n")
+        self.start_experiment(pid, exp_id)
 
-        experiment = "audio" if exp_id == "1" else "audio_robot" if exp_id == "2" else "audio_robot_haptics"
-        self.log(f"🧪 Starting experiment for Participant {pid}")
+    def start_experiment(self, pid, exp_id):
+        self.participant_id = pid
+        self.experiment_id = exp_id
+        self.experiment = "audio" if exp_id == "1" else "audio_robot" if exp_id == "2" else "audio_robot_haptics"
+        self.setup_log_paths()
+        self.build_experiment_screen()
+        threading.Thread(target=self.run_experiment, daemon=True).start()
 
-        # Start processes in background thread
-        threading.Thread(target=self.run_experiment, args=(pid, experiment, exp_id)).start()
-
-    def run_experiment(self, pid, experiment, exp_id):
-        logs_dir = f"./data/{experiment}/"
+    def setup_log_paths(self):
+        logs_dir = f"./data/{self.experiment}/"
         os.makedirs(logs_dir, exist_ok=True)
-
-        logs = {
-            "video_out": f"{logs_dir}/participant_{pid}_video_out.log",
-            "video_err": f"{logs_dir}/participant_{pid}_video_err.log",
-            "ppg_out": f"{logs_dir}/participant_{pid}_ppg_out.log",
-            "ppg_err": f"{logs_dir}/participant_{pid}_ppg_err.log",
-            "qtrobot_out": f"{logs_dir}/participant_{pid}_qtrobot_out.log",
-            "qtrobot_err": f"{logs_dir}/participant_{pid}_qtrobot_err.log",
+        self.logs = {
+            "video_out": f"{logs_dir}/participant_{self.participant_id}_video_out.log",
+            "video_err": f"{logs_dir}/participant_{self.participant_id}_video_err.log",
+            "ppg_out": f"{logs_dir}/participant_{self.participant_id}_ppg_out.log",
+            "ppg_err": f"{logs_dir}/participant_{self.participant_id}_ppg_err.log",
+            "qtrobot_out": f"{logs_dir}/participant_{self.participant_id}_qtrobot_out.log",
+            "qtrobot_err": f"{logs_dir}/participant_{self.participant_id}_qtrobot_err.log",
+            "stroop_out": f"{logs_dir}/participant_{self.participant_id}_stroop_out.log",
+            "stroop_err": f"{logs_dir}/participant_{self.participant_id}_stroop_err.log"
         }
 
-        def start_process(script, out, err):
-            return subprocess.Popen(
-                ["python", script, pid, experiment],
-                stdout=open(out, "w"),
-                stderr=open(err, "w"),
-                creationflags=subprocess.CREATE_NEW_PROCESS_GROUP
-            )
+    def build_experiment_screen(self):
+        for widget in self.root.winfo_children():
+            widget.destroy()
 
-        # Start video & PPG
-        self.log("▶ Starting video and PPG recording...")
-        self.processes["video"] = start_process("recordVideo.py", logs["video_out"], logs["video_err"])
-        self.processes["ppg"] = start_process("ppg.py", logs["ppg_out"], logs["ppg_err"])
+        frame = tk.Frame(self.root, bg=PRIMARY_COLOR)
+        frame.place(relx=0.5, rely=0.4, anchor="center")
 
-        # Run Stroop task
-        self.log("▶ Running Stroop Task...")
-        subprocess.run(
-            ["python", "stroop.py", pid, experiment, "before"],
-            stdout=open(logs["video_out"], "a"),
-            stderr=open(logs["video_err"], "a")
+        self.status_label = tk.Label(frame, text="Starting experiment...", font=FONT, bg=PRIMARY_COLOR)
+        self.status_label.pack(pady=10)
+
+        self.timer_label = tk.Label(frame, text="", font=("Segoe UI", 28), bg=PRIMARY_COLOR)
+        self.timer_label.pack(pady=10)
+
+        self.progress = ttk.Progressbar(frame, length=400, mode='determinate')
+        style = ttk.Style()
+        style.configure("TProgressbar", foreground=ACCENT_COLOR, background=ACCENT_COLOR)
+        self.progress.pack(pady=10)
+
+    def log(self, message):
+        self.status_label.config(text=message)
+        print(f"[{datetime.now().strftime('%H:%M:%S')}] {message}")
+
+    def run_subprocess(self, cmd, out_log, err_log):
+        return subprocess.Popen(
+            cmd,
+            stdout=open(out_log, "w"),
+            stderr=open(err_log, "w"),
+            creationflags=subprocess.CREATE_NEW_PROCESS_GROUP
         )
-        self.log("✅ Stroop Task Completed")
 
-        # Break
-        self.log("🛋️ Break started for 15 seconds...")
-        time.sleep(15)
-        self.log("⏰ Break ended. Starting main experiment.")
+    def run_experiment(self):
+        self.log("▶ Starting Video & PPG...")
+        self.processes["video"] = self.run_subprocess(
+            ["python", "recordVideo.py", self.participant_id, self.experiment],
+            self.logs["video_out"], self.logs["video_err"])
 
-        # Qtrobot / Audio
-        if exp_id == "1":
-            self.processes["qtrobot"] = start_process("audio.py", logs["qtrobot_out"], logs["qtrobot_err"])
+        self.processes["ppg"] = self.run_subprocess(
+            ["python", "ppg.py", self.participant_id, self.experiment],
+            self.logs["ppg_out"], self.logs["ppg_err"])
+
+        time.sleep(2)
+
+        self.log("▶ Running Stroop Task...")
+        with open(self.logs["stroop_out"], "a") as out, open(self.logs["stroop_err"], "a") as err:
+            subprocess.run(
+                ["python", "stroop.py", self.participant_id, self.experiment, "before"],
+                stdout=out, stderr=err)
+
+        self.log(f"🛋️ Break Time: {BREAK_DURATION} sec")
+        self.run_timer(BREAK_DURATION)
+
+        self.log(f"🧘‍♂️ Meditation Exercise {self.experiment_id}...")
+        if self.experiment_id == "1":
+            self.processes["qtrobot"] = self.run_subprocess(
+                ["python", "audio.py", self.participant_id],
+                self.logs["qtrobot_out"], self.logs["qtrobot_err"])
         else:
-            self.processes["qtrobot"] = subprocess.Popen(
-                [
-                    "ssh", "qtrobot@192.168.1.34",
-                    "bash", "-c",
-                    f"'python3 /home/qtrobot/robot/code/natty/test_qt_speech/src/{experiment}.py {pid}'"
-                ],
-                stdout=open(logs["qtrobot_out"], "w"),
-                stderr=open(logs["qtrobot_err"], "w"),
-                creationflags=subprocess.CREATE_NEW_PROCESS_GROUP
-            )
-        self.log("✅ Main experiment running...")
+            self.processes["qtrobot"] = self.run_subprocess(
+                ["ssh", "qtrobot@192.168.1.34", "bash", "-c",
+                 f"'python3 /home/qtrobot/robot/code/natty/test_qt_speech/src/{self.experiment}.py {self.participant_id}'"],
+                self.logs["qtrobot_out"], self.logs["qtrobot_err"])
 
-        # Stroop after
-        self.log("▶ Waiting for user to finish...")
-        self.root.after(100, self.wait_for_finish)
+        self.root.after(MEDITATION_DURATION * 1000, self.show_continue_button)
+        self.user_continue.wait()
 
-    def wait_for_finish(self):
-        if "finished" in self.processes:
-            return
-        # Wait until user clicks Finish
-        self.root.after(100, self.wait_for_finish)
+        self.log("▶ Running Stroop Task (After)...")
+        with open(self.logs["stroop_out"], "a") as out, open(self.logs["stroop_err"], "a") as err:
+            subprocess.run(
+                ["python", "stroop.py", self.participant_id, self.experiment, "after"],
+                stdout=out, stderr=err)
 
-    def stop_experiment(self):
-        self.log("🛑 Stopping experiment...")
-        self.processes["finished"] = True
+        self.log("🛑 Stopping Video Recording...")
+        self.stop_video()
 
-        # Stop video
+        self.log("✅ Experiment Completed!")
+
+    def run_timer(self, duration):
+        for remaining in range(duration, 0, -1):
+            self.timer_label.config(text=f"Break: {remaining} sec")
+            time.sleep(1)
+        self.timer_label.config(text="")
+
+    def run_progress(self, duration):
+        self.progress["maximum"] = duration
+        for i in range(duration):
+            self.progress["value"] = i + 1
+            time.sleep(1)
+        self.progress["value"] = 0
+
+    def stop_video(self):
         try:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                s.connect(('127.0.0.1', 65432))
+                s.connect(('127.0.0.1', VIDEO_STOP_PORT))
                 s.sendall(b"STOP")
                 self.log("📩 Sent STOP to Video Recording.")
         except Exception as e:
-            self.log(f"⚠️ Failed to stop video: {e}")
+            self.log(f"⚠️ Video stop failed: {e}")
 
-        # Terminate others
         for key in ["qtrobot", "ppg"]:
             proc = self.processes.get(key)
             if proc and proc.poll() is None:
                 proc.terminate()
                 self.log(f"🔻 {key} process terminated.")
-
-        self.log("✅ Experiment finished.")
-
 
 if __name__ == "__main__":
     root = tk.Tk()

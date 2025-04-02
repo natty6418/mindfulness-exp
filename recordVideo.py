@@ -23,8 +23,9 @@ ffmpeg_cmd = [
     '-i', 'video=Microsoft® LifeCam HD-3000',
     '-vcodec', 'libx264',
     '-pix_fmt', 'yuv420p',
-    '-preset', 'ultrafast',
-    '-crf', '23',
+    '-preset', 'veryfast',
+    # '-vf', 'scale=640:360',
+    '-crf', '28',
     '-f', 'mp4',
     '-y',
     video_filename
