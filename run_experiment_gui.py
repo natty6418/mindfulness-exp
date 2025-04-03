@@ -105,7 +105,8 @@ class ExperimentApp:
             "qtrobot_out": f"{logs_dir}/participant_{self.participant_id}_qtrobot_out.log",
             "qtrobot_err": f"{logs_dir}/participant_{self.participant_id}_qtrobot_err.log",
             "stroop_out": f"{logs_dir}/participant_{self.participant_id}_stroop_out.log",
-            "stroop_err": f"{logs_dir}/participant_{self.participant_id}_stroop_err.log"
+            "stroop_err": f"{logs_dir}/participant_{self.participant_id}_stroop_err.log",
+            "experiment": f"{logs_dir}/participant_{self.participant_id}_experiment.log",
         }
 
     def build_experiment_screen(self):
@@ -129,6 +130,8 @@ class ExperimentApp:
     def log(self, message):
         self.status_label.config(text=message)
         print(f"[{datetime.now().strftime('%H:%M:%S')}] {message}")
+        with open(self.logs["experiment"], "a") as f:
+            f.write(f"[{datetime.now().strftime('%H:%M:%S')}] {message}\n")
 
     def run_subprocess(self, cmd, out_log, err_log):
         return subprocess.Popen(
