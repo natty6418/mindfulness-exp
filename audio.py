@@ -90,5 +90,6 @@ if __name__ == "__main__":
 
         log_event("Audio: outro")
         play_audio_blocking('outro.wav')
+        play_audio_blocking('proceed.wav')
 
         print("Finished.")

@@ -142,7 +142,7 @@ class ExperimentApp:
         )
 
     def run_experiment(self):
-        self.log("▶ Starting Video & PPG...")
+        self.log("Starting Video & PPG...")
         self.processes["video"] = self.run_subprocess(
             ["python", "recordVideo.py", self.participant_id, self.experiment],
             self.logs["video_out"], self.logs["video_err"])
@@ -153,16 +153,16 @@ class ExperimentApp:
 
         time.sleep(2)
 
-        self.log("▶ Running Stroop Task...")
+        self.log("Running Stroop Task...")
         with open(self.logs["stroop_out"], "a") as out, open(self.logs["stroop_err"], "a") as err:
             subprocess.run(
                 ["python", "stroop.py", self.participant_id, self.experiment, "before"],
                 stdout=out, stderr=err)
 
-        self.log(f"🛋️ Break Time: {BREAK_DURATION} sec")
+        self.log(f"Break Time: {BREAK_DURATION} sec")
         self.run_timer(BREAK_DURATION)
 
-        self.log(f"🧘‍♂️ Meditation Exercise {self.experiment_id}...")
+        self.log(f"Meditation Exercise {self.experiment_id}...")
         if self.experiment_id == "1":
             self.processes["qtrobot"] = self.run_subprocess(
                 ["python", "audio.py", self.participant_id],
@@ -176,16 +176,26 @@ class ExperimentApp:
         self.root.after(MEDITATION_DURATION * 1000, self.show_continue_button)
         self.user_continue.wait()
 
-        self.log("▶ Running Stroop Task (After)...")
+        self.log("Running Stroop Task (After)...")
         with open(self.logs["stroop_out"], "a") as out, open(self.logs["stroop_err"], "a") as err:
             subprocess.run(
                 ["python", "stroop.py", self.participant_id, self.experiment, "after"],
                 stdout=out, stderr=err)
 
-        self.log("🛑 Stopping Video Recording...")
+        self.log("Stopping Video Recording...")
         self.stop_video()
+        if self.experiment_id != "1":
+            ps_script = ".\\download_data.ps1"
+            try:
+                result = subprocess.run(
+                    ["powershell", "-ExecutionPolicy", "Bypass", "-File", ps_script, self.experiment, self.participant_id],
+                    capture_output=True, text=True, check=True)
+                print(result.stdout)
+            except subprocess.CalledProcessError as e:
+                print(f"❌ Script failed:\n{e.stderr}")
 
-        self.log("✅ Experiment Completed!")
+
+        self.log("Experiment Completed!")
 
     def run_timer(self, duration):
         for remaining in range(duration, 0, -1):
@@ -205,15 +215,15 @@ class ExperimentApp:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                 s.connect(('127.0.0.1', VIDEO_STOP_PORT))
                 s.sendall(b"STOP")
-                self.log("📩 Sent STOP to Video Recording.")
+                self.log("Sent STOP to Video Recording.")
         except Exception as e:
-            self.log(f"⚠️ Video stop failed: {e}")
+            self.log(f"Video stop failed: {e}")
 
         for key in ["qtrobot", "ppg"]:
             proc = self.processes.get(key)
             if proc and proc.poll() is None:
                 proc.terminate()
-                self.log(f"🔻 {key} process terminated.")
+                self.log(f"{key} process terminated.")
 
 if __name__ == "__main__":
     root = tk.Tk()
