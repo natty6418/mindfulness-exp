@@ -7,7 +7,7 @@ param (
 )
 
 $remoteUser = "qtrobot"
-$remoteHost = "192.168.1.34"
+$remoteHost = "192.168.1.15"
 $remoteDir = "/home/qtrobot/robot/code/natty/test_qt_speech/src/data/$Experiment"
 $remoteFile = "participant_${ParticipantID}_data.csv"
 $remotePath = "$remoteDir/$remoteFile"

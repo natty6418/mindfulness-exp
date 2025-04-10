@@ -7,13 +7,13 @@ import sys
 import os
 
 # === Constants ===
-DURATION = 120  # Total task time in seconds
-ISI = 1500  # Inter-stimulus interval in ms
+DURATION = 121  # Total task time in seconds
+ISI = 1000  # Inter-stimulus interval in ms
 STIM_DURATION = 1000  # Stimulus duration in ms
 MATCH_PROBABILITY = 0.3  # 30% match trials
 
-WORDS = ["RED", "GREEN", "BLUE", "YELLOW", "PURPLE", "ORANGE"]
-COLORS = {"RED": "red", "GREEN": "green", "BLUE": "blue", "YELLOW": "yellow", "PURPLE": "purple", "ORANGE": "orange"}
+WORDS = ["RED", "GREEN", "BLUE", "YELLOW", "PURPLE"]
+COLORS = {"RED": "red", "GREEN": "green", "BLUE": "blue", "YELLOW": "yellow", "PURPLE": "purple"}
 
 RESPONSE_KEY = "Return"  # Enter
 QUIT_KEY = "q"
@@ -25,6 +25,27 @@ before_after = sys.argv[3] if len(sys.argv) > 3 else "before"
 os.makedirs(f"data/{experiment_id}", exist_ok=True)
 log_file = f"./data/{experiment_id}/participant_{participant_id}_stroop_results_{before_after}.csv"
 results = []
+
+
+WORDS = ["RED", "GREEN", "BLUE", "YELLOW", "PURPLE"]
+COLORS = {"RED": "red", "GREEN": "green", "BLUE": "blue", "YELLOW": "yellow", "PURPLE": "purple"}
+MATCH_PROBABILITY=0.3
+color=[]
+word=[]
+match = [True] * int(120*MATCH_PROBABILITY) + [False] * int(120-(120*MATCH_PROBABILITY))
+random.shuffle(match)
+for i in range(120):
+    is_match = match[i]
+    current_word = random.choice(WORDS)
+    correct_color = COLORS[current_word]
+
+    if is_match:
+        current_color = correct_color
+    else:
+        other_colors = [c for c in COLORS.values() if c != correct_color]
+        current_color = random.choice(other_colors)
+    color.append(current_color)
+    word.append(current_word)
 
 # === Tkinter GUI ===
 root = tk.Tk()
@@ -61,9 +82,16 @@ current_color = None
 response_received = False
 task_running = False
 
+current_trail_index=0
+
+def waithere(t):
+    var = tk.IntVar()
+    root.after(int(t), var.set, 1)
+    root.wait_variable(var)
+
 # === Trial logic ===
 def show_next_trial():
-    global trial_start, current_word, current_color, response_received
+    global trial_start, current_word, current_color, response_received, current_trail_index, word, color
 
     if not task_running:
         return
@@ -74,15 +102,21 @@ def show_next_trial():
 
     response_received = False
 
-    is_match = random.random() < MATCH_PROBABILITY
-    current_word = random.choice(WORDS)
-    correct_color = COLORS[current_word]
+    # print(current_trail_index, word, color)
+    if current_trail_index == 120:
+        end_task()
+        return
 
-    if is_match:
-        current_color = correct_color
-    else:
-        other_colors = [c for c in COLORS.values() if c != correct_color]
-        current_color = random.choice(other_colors)
+    current_word = word[current_trail_index]
+    current_color = color[current_trail_index]
+
+    current_trail_index+=1
+
+    # if is_match:
+    #     current_color = correct_color
+    # else:
+    #     other_colors = [c for c in COLORS.values() if c != correct_color]
+    #     current_color = random.choice(other_colors)
 
     label.config(text=current_word, fg=current_color)
     trial_start = time.time()
@@ -145,6 +179,8 @@ def on_key_press(event):
         "correct": correct,
         "reaction_time": round(rt, 3)
     })
+    label.config(text="", fg=current_color)
+    waithere(1000-rt)
 
 def start_task():
     global start_time, task_running

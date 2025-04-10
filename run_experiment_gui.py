@@ -10,7 +10,7 @@ from datetime import datetime
 # ---- CONFIG ----
 BREAK_DURATION = 15  # seconds
 MEDITATION_DURATION = 330  # seconds
-VIDEO_STOP_PORT = 30001
+VIDEO_STOP_PORT = 65431
 PARTICIPANTS_FILE = "participants.txt"
 
 PRIMARY_COLOR = "#e0f7fa"  # light cyan
@@ -169,7 +169,7 @@ class ExperimentApp:
                 self.logs["qtrobot_out"], self.logs["qtrobot_err"])
         else:
             self.processes["qtrobot"] = self.run_subprocess(
-                ["ssh", "qtrobot@192.168.1.34", "bash", "-c",
+                ["ssh", "qtrobot@192.168.1.15", "bash", "-c",
                  f"'python3 /home/qtrobot/robot/code/natty/test_qt_speech/src/{self.experiment}.py {self.participant_id}'"],
                 self.logs["qtrobot_out"], self.logs["qtrobot_err"])
 

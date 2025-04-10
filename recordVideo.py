@@ -6,9 +6,9 @@ import socket
 import threading
 
 HOST = '127.0.0.1'
-PORT = 30001  # You can choose any free port
+PORT = 65431  # You can choose any free port
 
-participant_id = sys.argv[1] if len(sys.argv) > 1 else "unknown"
+participant_id = sys.argv[1] if len(sys.argv) > 1 else "test"
 experiment_id = sys.argv[2] if len(sys.argv) > 2 else "test"
 
 output_dir = f"./data/{experiment_id}/"
@@ -25,7 +25,7 @@ ffmpeg_cmd = [
     '-pix_fmt', 'yuv420p',
     '-preset', 'veryfast',
     # '-vf', 'scale=640:360',
-    '-crf', '28',
+    '-crf', '23',
     '-f', 'mp4',
     '-y',
     video_filename

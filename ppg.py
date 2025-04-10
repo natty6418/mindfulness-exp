@@ -3,6 +3,7 @@ import serial
 import sys
 from pyshimmer import ShimmerBluetooth, DEFAULT_BAUDRATE, DataPacket, EChannelType
 
+
 participant_id = sys.argv[1] if len(sys.argv) > 1 else "test"
 experiment_id = sys.argv[2] if len(sys.argv) > 2 else "test"
 DATA_FILE = f"./data/{experiment_id}/participant_{participant_id}_ppg_data.csv"
@@ -34,6 +35,7 @@ if __name__ == '__main__':
             serial_conn = serial.Serial('COM8', DEFAULT_BAUDRATE, timeout=1)
             shim_dev = ShimmerBluetooth(serial_conn)
             shim_dev.initialize()
+            shim_dev.set_sampling_rate(512.0)
 
             print(f"Starting PPG data collection for Participant {participant_id}...")
             

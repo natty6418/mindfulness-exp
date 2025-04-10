@@ -55,60 +55,63 @@ if __name__ == "__main__":
                     server_socket.settimeout(1.0)
                     
                     conn, addr = server_socket.accept()  # Wait for a client connection
-                    # conn.settimeout(1.0)
+                    conn.settimeout(1.0)
                     with conn:
                         print(f"Connected by {addr}")
                         while True:
-                            data = conn.recv(1024)
-                            if not data:
-                                print(f"Client {addr} disconnected.")
-                                break  # Exit inner loop and wait for next connection
+                            try:
+                                data = conn.recv(1024)
+                                if not data:
+                                    print(f"Client {addr} disconnected.")
+                                    break  # Exit inner loop and wait for next connection
 
-                            trigger_event = data.decode().strip()
-                            print(f"Received trigger: {trigger_event}")
+                                trigger_event = data.decode().strip()
+                                print(f"Received trigger: {trigger_event}")
 
-                            if trigger_event == "inhale":
-                                print("Running wave pattern...")
-                                load_and_play_tact_file("inhale", "inhale.tact")
-                                time.sleep(4)
-                            elif trigger_event == "exhale":
-                                print("Running wave pattern...")
-                                load_and_play_tact_file("exhale", "exhale.tact")
-                                time.sleep(8)
-                            elif trigger_event == "left_shoulder":
-                                print("Running left shoulder pattern...")
-                                load_and_play_tact_file("left_shoulder", "left_shoulder2.tact")
-                                time.sleep(8)
-                            elif trigger_event == "left_abdomen":
-                                print("Running left abdomen pattern...")
-                                load_and_play_tact_file("left_abdomen", "left_abdomen2.tact")
-                                time.sleep(9)
-                            elif trigger_event == "right_shoulder":
-                                print("Running right shoulder pattern...")
-                                load_and_play_tact_file("right_shoulder", "right_shoulder2.tact")
-                                time.sleep(8)
-                            elif trigger_event == "right_abdomen":
-                                print("Running right abdomen pattern...")
-                                load_and_play_tact_file("right_abdomen", "right_abdomen2.tact")
-                                time.sleep(9)
-                            elif trigger_event == "left_chest":
-                                print("Running left chest pattern...")
-                                load_and_play_tact_file("left_chest", "left_chest2.tact")
-                                time.sleep(9)
-                            elif trigger_event == "right_chest":
-                                print("Running right chest pattern...")
-                                load_and_play_tact_file("right_chest", "right_chest2.tact")
-                                time.sleep(9)
-                            elif trigger_event == "left_lower_back":
-                                print("Running left lower back pattern...")
-                                load_and_play_tact_file("left_lower_back", "left_lower_back2.tact")
-                                time.sleep(8)
-                            elif trigger_event == "right_lower_back":
-                                print("Running right lower back pattern...")
-                                load_and_play_tact_file("right_lower_back", "right_lower_back2.tact")
-                                time.sleep(8)
-                            else:
-                                print("Invalid trigger:", trigger_event)
+                                if trigger_event == "inhale":
+                                    print("Running wave pattern...")
+                                    load_and_play_tact_file("inhale", "inhale.tact")
+                                    time.sleep(4)
+                                elif trigger_event == "exhale":
+                                    print("Running wave pattern...")
+                                    load_and_play_tact_file("exhale", "exhale.tact")
+                                    time.sleep(8)
+                                elif trigger_event == "left_shoulder":
+                                    print("Running left shoulder pattern...")
+                                    load_and_play_tact_file("left_shoulder", "left_shoulder2.tact")
+                                    time.sleep(8)
+                                elif trigger_event == "left_abdomen":
+                                    print("Running left abdomen pattern...")
+                                    load_and_play_tact_file("left_abdomen", "left_abdomen2.tact")
+                                    time.sleep(9)
+                                elif trigger_event == "right_shoulder":
+                                    print("Running right shoulder pattern...")
+                                    load_and_play_tact_file("right_shoulder", "right_shoulder2.tact")
+                                    time.sleep(8)
+                                elif trigger_event == "right_abdomen":
+                                    print("Running right abdomen pattern...")
+                                    load_and_play_tact_file("right_abdomen", "right_abdomen2.tact")
+                                    time.sleep(9)
+                                elif trigger_event == "left_chest":
+                                    print("Running left chest pattern...")
+                                    load_and_play_tact_file("left_chest", "left_chest2.tact")
+                                    time.sleep(9)
+                                elif trigger_event == "right_chest":
+                                    print("Running right chest pattern...")
+                                    load_and_play_tact_file("right_chest", "right_chest2.tact")
+                                    time.sleep(9)
+                                elif trigger_event == "left_lower_back":
+                                    print("Running left lower back pattern...")
+                                    load_and_play_tact_file("left_lower_back", "left_lower_back2.tact")
+                                    time.sleep(8)
+                                elif trigger_event == "right_lower_back":
+                                    print("Running right lower back pattern...")
+                                    load_and_play_tact_file("right_lower_back", "right_lower_back2.tact")
+                                    time.sleep(8)
+                                else:
+                                    print("Invalid trigger:", trigger_event)
+                            except socket.timeout:
+                                continue
                 except socket.timeout:
                     continue 
 
