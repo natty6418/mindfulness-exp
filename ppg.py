@@ -2,6 +2,8 @@ import time
 import serial
 import sys
 from pyshimmer import ShimmerBluetooth, DEFAULT_BAUDRATE, DataPacket, EChannelType
+from pyshimmer.dev.channels import ChDataTypeAssignment, ChannelDataType, EChannelType, ESensorGroup
+
 
 
 participant_id = sys.argv[1] if len(sys.argv) > 1 else "test"
@@ -32,10 +34,18 @@ if __name__ == '__main__':
         f.write("Time(s),PPG(mV)\n")  # header line
 
         try:
-            serial_conn = serial.Serial('COM8', DEFAULT_BAUDRATE, timeout=1)
+            
+            serial_conn = serial.Serial('COM8', DEFAULT_BAUDRATE)
             shim_dev = ShimmerBluetooth(serial_conn)
             shim_dev.initialize()
-            shim_dev.set_sampling_rate(512.0)
+            # shim_dev.set_sensors([
+            #         ESensorGroup.CH_A12,  # PPG 1
+            #         ESensorGroup.CH_A13,  # PPG 2
+            #         ESensorGroup.CH_A14,  # PPG 3
+            #         ESensorGroup.EXG1_16BIT
+            #     ])
+
+            shim_dev.set_sampling_rate(256.0)
 
             print(f"Starting PPG data collection for Participant {participant_id}...")
             
@@ -54,5 +64,37 @@ if __name__ == '__main__':
 
         except KeyboardInterrupt:
             print("\nStopping PPG data collection...")
+            shim_dev.stop_streaming()
+            shim_dev.shutdown()
         finally:
             print(f"\n✅ Data continuously saved to {DATA_FILE}.")
+
+
+# if __name__ == '__main__':
+#     serial = Serial('COM8', DEFAULT_BAUDRATE)
+#     shim_dev = ShimmerBluetooth(serial)
+
+
+#     # shim_dev.shutdown()
+#     shim_dev.initialize()
+
+    
+#     shim_dev.set_sensors([
+#         ESensorGroup.CH_A12,  # PPG 1
+#         ESensorGroup.CH_A13,  # PPG 2
+#         ESensorGroup.CH_A14,  # PPG 3
+#          ESensorGroup.EXG1_16BIT
+#     ])
+
+
+
+#     dev_name = shim_dev.get_device_name()
+#     print(f'My name is: {dev_name}')
+
+#     shim_dev.add_stream_callback(handler)
+
+#     shim_dev.start_streaming()
+#     time.sleep(5.0)
+#     shim_dev.stop_streaming()
+
+#     shim_dev.shutdown()
