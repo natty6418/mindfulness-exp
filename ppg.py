@@ -14,14 +14,16 @@ DATA_FILE = f"./data/{experiment_id}/participant_{participant_id}_ppg_data.csv"
 def handler(pkt: DataPacket, file_handle, start_time_holder) -> None:
     try:
         cur_value = pkt[EChannelType.INTERNAL_ADC_13]
+        packet_timestamp = pkt[EChannelType.TIMESTAMP]        
     except KeyError:
         print("Warning: PPG data not found in packet.")
         return
 
     if start_time_holder["start_time"] is None:
-        start_time_holder["start_time"] = time.time()
+        start_time_holder["start_time"] = packet_timestamp
 
-    elapsed_time = time.time() - start_time_holder["start_time"]
+
+    elapsed_time = (packet_timestamp - start_time_holder["start_time"])/32768.0
     print(f"Time: {elapsed_time:.2f}s | PPG: {cur_value}")
 
     # Write data to disk immediately
@@ -35,20 +37,13 @@ if __name__ == '__main__':
 
         try:
             
-            serial_conn = serial.Serial('COM8', DEFAULT_BAUDRATE)
+            serial_conn = serial.Serial('COM3', DEFAULT_BAUDRATE)
             shim_dev = ShimmerBluetooth(serial_conn)
             shim_dev.initialize()
-            # shim_dev.set_sensors([
-            #         ESensorGroup.CH_A12,  # PPG 1
-            #         ESensorGroup.CH_A13,  # PPG 2
-            #         ESensorGroup.CH_A14,  # PPG 3
-            #         ESensorGroup.EXG1_16BIT
-            #     ])
 
-            shim_dev.set_sampling_rate(256.0)
+            shim_dev.set_sampling_rate(512.0)
 
             print(f"Starting PPG data collection for Participant {participant_id}...")
-            
             # We'll store the start time in a mutable dict so the handler can update it
             start_time_holder = {"start_time": None}
             
@@ -57,6 +52,12 @@ if __name__ == '__main__':
                 lambda pkt: handler(pkt, f, start_time_holder)
             )
             shim_dev.start_streaming()
+            # status = shim_dev.get_status()
+            # print(status)
+            # sampling_rate = shim_dev.get_sampling_rate()
+            # print(f"Sampling rate: {sampling_rate} Hz")
+            # # shim_dev.set_rtc(time.time())
+            # print(shim_dev.get_data_types())
 
             # main loop
             while True:
@@ -65,7 +66,7 @@ if __name__ == '__main__':
         except KeyboardInterrupt:
             print("\nStopping PPG data collection...")
             shim_dev.stop_streaming()
-            shim_dev.shutdown()
+            # shim_dev.shutdown()
         finally:
             print(f"\n✅ Data continuously saved to {DATA_FILE}.")
 
