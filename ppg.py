@@ -23,17 +23,17 @@ def handler(pkt: DataPacket, file_handle, start_time_holder) -> None:
         start_time_holder["start_time"] = packet_timestamp
 
 
-    elapsed_time = (packet_timestamp - start_time_holder["start_time"])/32768.0
-    print(f"Time: {elapsed_time:.2f}s | PPG: {cur_value}")
+    # elapsed_time = (packet_timestamp - start_time_holder["start_time"])/32768.0
+    print(f"Time: {packet_timestamp:.2f}s | PPG: {cur_value}")
 
     # Write data to disk immediately
-    file_handle.write(f"{elapsed_time:.4f},{cur_value}\n")
+    file_handle.write(f"{packet_timestamp:.4f},{cur_value}\n")
     file_handle.flush()  # ensures data is actually written
 
 if __name__ == '__main__':
     # Open the file in write mode (or "a" if you want to append)
     with open(DATA_FILE, "w", buffering=1) as f:
-        f.write("Time(s),PPG(mV)\n")  # header line
+        f.write("TimeStamp,PPG(mV)\n")  # header line
 
         try:
             
