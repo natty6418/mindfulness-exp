@@ -17,15 +17,15 @@ if (-not (Test-Path $localPath)) {
     New-Item -ItemType Directory -Path $localPath | Out-Null
 }
 
-Write-Output "📥 Downloading participant $ParticipantID data for $Experiment..."
+Write-Output "Downloading participant $ParticipantID data for $Experiment..."
 
 # Use scp command with proper quoting
 $scpCommand = "scp ${remoteUser}@${remoteHost}:$remotePath $localPath"
 Invoke-Expression $scpCommand
 
 if ($LASTEXITCODE -eq 0) {
-    Write-Output "✅ Download complete: $localPath/$remoteFile"
+    Write-Output "Download complete: $localPath/$remoteFile"
 }
 else {
-    Write-Output "❌ Download failed."
+    Write-Output '[ERROR] Download failed.'
 }

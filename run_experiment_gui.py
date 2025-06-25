@@ -224,8 +224,39 @@ class ExperimentApp:
             if proc and proc.poll() is None:
                 proc.terminate()
                 self.log(f"{key} process terminated.")
+    
+    def stop_remote_qtrobot(self):
+        try:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.connect(('192.168.1.15', 65430))
+                s.sendall(b"STOP")
+                self.log("Sent STOP signal to remote robot.")
+        except Exception as e:
+            self.log(f"Failed to stop remote robot: {e}")
+
+
+
+    def on_close(self):
+        self.log("Closing application... Terminating all processes.")
+        self.stop_video()
+        self.stop_remote_qtrobot()
+        for key, proc in self.processes.items():
+            if proc and proc.poll() is None:
+                try:
+                    proc.terminate()
+                    proc.wait(timeout=3)
+                    self.log(f"{key} process terminated.")
+                except subprocess.TimeoutExpired:
+                    proc.kill()
+                    self.log(f"{key} process force-killed.")
+                except Exception as e:
+                    self.log(f"Failed to terminate {key}: {e}")
+        self.root.destroy()
+
+
 
 if __name__ == "__main__":
     root = tk.Tk()
     app = ExperimentApp(root)
+    root.protocol("WM_DELETE_WINDOW", app.on_close)
     root.mainloop()

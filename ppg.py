@@ -24,12 +24,7 @@ def handler(pkt: DataPacket, file_handle) -> None:
         print("Warning: PPG data not found in packet.")
         return
 
-    # if start_time_holder["start_time"] is None:
-    #     start_time_holder["start_time"] = packet_timestamp
-
-    # data["timeStamp"].append(packet_timestamp)
-    # data["PPG"].append(cur_value)
-    # elapsed_time = (packet_timestamp - start_time_holder["start_time"])/DEV_CLOCK_RATE
+    
     print(f"Time Stamp: {packet_timestamp:.2f} | PPG: {cur_value}")
 
     # Write data to disk immediately
@@ -43,19 +38,14 @@ if __name__ == '__main__':
 
         try:
             
-            serial_conn = serial.Serial('COM8', DEFAULT_BAUDRATE)
+            serial_conn = serial.Serial('COM4', DEFAULT_BAUDRATE)
             shim_dev = ShimmerBluetooth(serial_conn)
             shim_dev.initialize()
 
             shim_dev.set_sampling_rate(512.0)
 
             print(f"Starting PPG data collection for Participant {participant_id}...")
-            # We'll store the start time in a mutable dict so the handler can update it
-            # start_time_holder = {"start_time": None}
-            # data = {
-            #     "timeStamp": [],
-            #     "PPG": [],
-            # }
+           
             
             # Add a lambda or partial so we can pass 'f' and 'start_time_holder' to the handler
             shim_dev.add_stream_callback(
@@ -68,6 +58,7 @@ if __name__ == '__main__':
             # print(f"Sampling rate: {sampling_rate} Hz")
             # # shim_dev.set_rtc(time.time())
             # print(shim_dev.get_data_types())
+            # print("Battery", shim_dev.get_battery_state(in_percent=True))
 
             # main loop
             while True:
@@ -75,15 +66,8 @@ if __name__ == '__main__':
 
         except KeyboardInterrupt:
             print("\nStopping PPG data collection...")
-            # shim_dev.stop_streaming()
-            # ts_unwrapped = unwrap_device_timestamps(np.array(data["timeStamp"]))/ DEV_CLOCK_RATE
-            # # shim_dev.shutdown()
-            # for i in range(len(data["PPG"])):
-            #     f.write(f"{ts_unwrapped[i]-ts_unwrapped[0]:.4f},{data['PPG'][i]}\n")
-            # f.flush()
-            # f.close()
-            # shim_dev.shutdown()
-            # file_handle.close()
+            shim_dev.stop_streaming()
+           
             
             
         finally:
